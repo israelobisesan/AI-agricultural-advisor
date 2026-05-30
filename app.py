@@ -118,16 +118,30 @@ def send_confirmation_email(user_email):
     except Exception as e:
         print(f"Error sending email: {e}")
 
+def send_reset_email(user_email):
+    try:
+        token = s.dumps(user_email, salt='password-reset')
+        msg = FlaskMailMessage('Password Reset Request', sender=os.getenv('MAIL_FROM_ADDRESS'), recipients=[user_email])
+        link = url_for('reset_password', token=token, _external=True)
+        msg.body = f'To reset your password, click the following link: {link}\n\nThis link expires in 1 hour.'
+        mail.send(msg)
+    except Exception as e:
+        print(f"Error sending reset email: {e}")
+
 @app.route('/landing')
 def landing():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    return render_template('landing.html')
+    return redirect(url_for('home'))
 
 # --- Routes ---
 @app.route('/')
+def home():
+    if current_user.is_authenticated:
+        return redirect(url_for('chat'))
+    return render_template('landing.html')
+
+@app.route('/chat')
 @login_required
-def index():
+def chat():
     user_sessions = ChatSession.query.filter_by(user_id=current_user.id).order_by(ChatSession.created_at.desc()).all()
     if not user_sessions:
         new_session = ChatSession(user_id=current_user.id)
@@ -139,7 +153,7 @@ def index():
     if session_id:
         current_session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
         if not current_session:
-            return redirect(url_for('index', session_id=user_sessions[0].id))
+            return redirect(url_for('chat', session_id=user_sessions[0].id))
     else:
         current_session = user_sessions[0]
     
@@ -159,12 +173,12 @@ def new_chat():
     new_session = ChatSession(user_id=current_user.id)
     db.session.add(new_session)
     db.session.commit()
-    return redirect(url_for('index', session_id=new_session.id))
+    return redirect(url_for('chat', session_id=new_session.id))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('chat'))
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -206,7 +220,7 @@ def confirm_email(token):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('chat'))
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -215,12 +229,61 @@ def login():
             if user.is_verified:
                 login_user(user)
                 flash('Login successful!', 'success')
-                return redirect(url_for('index'))
+                return redirect(url_for('chat'))
             else:
                 flash('Please confirm your email address before logging in.', 'warning')
         else:
             flash('Login unsuccessful. Please check email and password.', 'danger')
     return render_template('login.html')
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('chat'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if user:
+            send_reset_email(email)
+            flash('If that email is registered, a password reset link has been sent.', 'success')
+        else:
+            flash('If that email is registered, a password reset link has been sent.', 'success')
+        return redirect(url_for('login'))
+    return render_template('forgot_password.html')
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('chat'))
+    try:
+        email = s.loads(token, salt='password-reset', max_age=3600)
+    except:
+        flash('The password reset link has expired or is invalid.', 'danger')
+        return redirect(url_for('forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm = request.form.get('confirm_password')
+        if not password or len(password) < 6:
+            flash('Password must be at least 6 characters.', 'danger')
+            return render_template('reset_password.html', token=token)
+        if password != confirm:
+            flash('Passwords do not match.', 'danger')
+            return render_template('reset_password.html', token=token)
+        
+        user = User.query.filter_by(email=email).first()
+        if user:
+            hashed = bcrypt.generate_password_hash(password).decode('utf-8')
+            user.password = hashed
+            db.session.commit()
+            flash('Your password has been updated! You can now log in.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('Account not found.', 'danger')
+            return redirect(url_for('forgot_password'))
+    
+    return render_template('reset_password.html', token=token)
+
 
 @app.route('/logout')
 @login_required
