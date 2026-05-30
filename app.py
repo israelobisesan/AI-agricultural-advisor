@@ -118,15 +118,13 @@ def send_confirmation_email(user_email):
     except Exception as e:
         flash(f'Error sending confirmation email: {e}', 'danger')
 
-def send_reset_email(user_email):
+def send_reset_email(user_email, link):
     try:
-        token = s.dumps(user_email, salt='password-reset')
         msg = FlaskMailMessage('Password Reset Request', sender=os.getenv('MAIL_FROM_ADDRESS'), recipients=[user_email])
-        link = url_for('reset_password', token=token, _external=True)
-        msg.body = f'To reset your password, click the following link: {link}\n\nThis link expires in 1 hour.'
+        msg.body = f'To reset your password, click: {link}\n\nThis link expires in 1 hour.'
         mail.send(msg)
     except Exception as e:
-        flash(f'Error sending reset email: {e}', 'danger')
+        flash(f'Email delivery failed ({e}).', 'warning')
 
 @app.route('/landing')
 def landing():
@@ -244,8 +242,10 @@ def forgot_password():
         email = request.form.get('email')
         user = User.query.filter_by(email=email).first()
         if user:
-            send_reset_email(email)
-            flash('If that email is registered, a password reset link has been sent.', 'success')
+            token = s.dumps(email, salt='password-reset')
+            link = url_for('reset_password', token=token, _external=True)
+            send_reset_email(email, link)
+            flash(f'Reset link (also sent via email): {link}', 'success')
         else:
             flash('If that email is registered, a password reset link has been sent.', 'success')
         return redirect(url_for('login'))
