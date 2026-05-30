@@ -116,7 +116,7 @@ def send_confirmation_email(user_email):
         msg.body = f'Your verification link is {link}'
         mail.send(msg)
     except Exception as e:
-        print(f"Error sending email: {e}")
+        flash(f'Error sending confirmation email: {e}', 'danger')
 
 def send_reset_email(user_email):
     try:
@@ -126,7 +126,7 @@ def send_reset_email(user_email):
         msg.body = f'To reset your password, click the following link: {link}\n\nThis link expires in 1 hour.'
         mail.send(msg)
     except Exception as e:
-        print(f"Error sending reset email: {e}")
+        flash(f'Error sending reset email: {e}', 'danger')
 
 @app.route('/landing')
 def landing():

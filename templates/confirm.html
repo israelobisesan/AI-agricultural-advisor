@@ -54,11 +54,28 @@
             transition: color 0.2s;
         }
         .auth-link:hover { color: #22c55e; }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .alert-success { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        .alert-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .alert-warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
     </style>
 </head>
 <body>
     <div class="auth-container">
         <div class="icon">📧</div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
         <h2 class="auth-title">Thank you for registering!</h2>
         <p class="confirm-message">Please check your email to confirm your account. If you don't see it, check your spam folder.</p>
         <a href="{{ url_for('login') }}" class="auth-link">Go to Login</a>
