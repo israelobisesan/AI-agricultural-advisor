@@ -37,7 +37,7 @@
             <div class="history-list">
                 <span class="history-label">Recent</span>
                 {% for session in sessions %}
-                <a href="{{ url_for('index', session_id=session.id) }}" class="history-item {{ 'active' if session.id == current_session.id }}">
+                <a href="{{ url_for('chat', session_id=session.id) }}" class="history-item {{ 'active' if session.id == current_session.id }}">
                     {{ session.title }}
                 </a>
                 {% endfor %}
