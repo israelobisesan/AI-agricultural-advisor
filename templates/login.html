@@ -92,6 +92,27 @@
         .alert-success { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
         .alert-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
         .alert-warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper input {
+            padding-right: 45px !important;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .toggle-password:hover { color: #4ade80; }
         .forgot-link {
             text-align: right;
             margin-top: -10px;
@@ -120,8 +141,9 @@
             <div class="form-group">
                 <input type="email" name="email" placeholder="Email address" required>
             </div>
-            <div class="form-group">
-                <input type="password" name="password" placeholder="Password" required>
+            <div class="form-group password-wrapper">
+                <input type="password" name="password" id="password" placeholder="Password" required>
+                <button type="button" class="toggle-password" onclick="togglePass('password', this)">👁</button>
             </div>
             <div class="forgot-link">
                 <a href="{{ url_for('forgot_password') }}">Forgot password?</a>
@@ -133,5 +155,17 @@
             <a href="{{ url_for('home') }}" class="auth-link">&larr; Back to Home</a>
         </div>
     </div>
+<script>
+function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '👁‍🗨';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁';
+    }
+}
+</script>
 </body>
 </html>
