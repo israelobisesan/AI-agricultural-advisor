@@ -7,45 +7,39 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .guest-topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 20px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+        .guest-history-prompt {
+            padding: 20px 10px;
+            text-align: center;
         }
-        .guest-topbar .app-title {
-            margin: 0;
-            font-size: 18px;
-            color: #fff !important;
+        .guest-prompt-text {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 12px;
         }
-        .guest-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .guest-btn {
-            padding: 8px 20px;
+        .guest-sidebar-btn {
+            display: block;
+            padding: 10px;
+            text-align: center;
             border-radius: 20px;
             text-decoration: none;
-            font-size: 14px;
             font-weight: 600;
+            font-size: 14px;
             transition: all 0.2s;
+            margin-bottom: 8px;
         }
-        .guest-btn-login {
+        .guest-sidebar-login {
             color: #fff;
             border: 1px solid rgba(255,255,255,0.3);
         }
-        .guest-btn-login:hover {
+        .guest-sidebar-login:hover {
             border-color: #4ade80;
             color: #4ade80;
         }
-        .guest-btn-register {
+        .guest-sidebar-register {
             background: linear-gradient(135deg, #4ade80, #22c55e);
             color: #0f2027;
         }
-        .guest-btn-register:hover {
+        .guest-sidebar-register:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 15px rgba(74,222,128,0.4);
         }
@@ -64,7 +58,6 @@
 </head>
 <body class="dark-mode">
     <div class="app-container">
-        {% if current_user.is_authenticated %}
         <aside class="sidebar" id="sidebar">
             <header class="sidebar-header">
                 <button class="sidebar-toggle" id="sidebar-toggle">
@@ -75,12 +68,14 @@
                 <h1 class="app-title">AI Advisor</h1>
             </header>
             
+            {% if current_user.is_authenticated %}
             <a href="{{ url_for('new_chat') }}" class="new-chat-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
                 New Chat
             </a>
+            {% endif %}
 
             <div class="language-selector">
                 <span class="selector-label">select language</span>
@@ -91,14 +86,23 @@
             </div>
             
             <div class="history-list">
+                {% if current_user.is_authenticated %}
                 <span class="history-label">Recent</span>
                 {% for session in sessions %}
                 <a href="{{ url_for('chat', session_id=session.id) }}" class="history-item {{ 'active' if session.id == current_session.id }}">
                     {{ session.title }}
                 </a>
                 {% endfor %}
+                {% else %}
+                <div class="guest-history-prompt">
+                    <p class="guest-prompt-text">Sign in to save your chat history</p>
+                    <a href="{{ url_for('login') }}" class="guest-sidebar-btn guest-sidebar-login">Log In</a>
+                    <a href="{{ url_for('register') }}" class="guest-sidebar-btn guest-sidebar-register">Sign Up</a>
+                </div>
+                {% endif %}
             </div>
 
+            {% if current_user.is_authenticated %}
             <footer class="sidebar-footer">
                 <div class="user-info">
                     <div class="avatar-placeholder"></div>
@@ -114,16 +118,14 @@
                     </a>
                 </div>
             </footer>
+            {% else %}
+            <footer class="sidebar-footer" style="border-top: none; margin-top: 0; padding-top: 0;">
+                <div class="action-buttons" style="justify-content: center;">
+                    <button id="theme-toggle" class="control-button">🌙</button>
+                </div>
+            </footer>
+            {% endif %}
         </aside>
-        {% else %}
-        <div class="guest-topbar">
-            <h1 class="app-title">AI Agriculture Advisor</h1>
-            <div class="guest-actions">
-                <a href="{{ url_for('login') }}" class="guest-btn guest-btn-login">Log In</a>
-                <a href="{{ url_for('register') }}" class="guest-btn guest-btn-register">Sign Up</a>
-            </div>
-        </div>
-        {% endif %}
         
         <div class="chat-main">
             {% if not current_user.is_authenticated %}

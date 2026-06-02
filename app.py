@@ -380,8 +380,6 @@ def generate_tts_audio(text, lang):
 
     return audio_urls
 
-    return audio_urls if audio_urls else []
-
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
@@ -587,6 +585,14 @@ def uploaded_file(filename):
 @app.route('/static/audio/<path:filename>')
 def audio_file(filename):
     return send_from_directory(app.config['AUDIO_FOLDER'], filename)
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    import traceback
+    tb = traceback.format_exc()
+    print(f"INTERNAL SERVER ERROR:\n{tb}")
+    return jsonify({'error': 'Internal server error', 'traceback': tb}), 500
 
 
 if __name__ == '__main__':

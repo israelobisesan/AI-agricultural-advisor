@@ -22,23 +22,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') {
         document.body.classList.add('light-mode');
-        themeToggleBtn.textContent = '☀️';
+        if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
     } else {
         document.body.classList.add('dark-mode');
-        themeToggleBtn.textContent = '🌙';
+        if (themeToggleBtn) themeToggleBtn.textContent = '🌙';
     }
 
-    themeToggleBtn.addEventListener('click', () => {
-        if (document.body.classList.contains('dark-mode')) {
-            document.body.classList.replace('dark-mode', 'light-mode');
-            themeToggleBtn.textContent = '☀️';
-            localStorage.setItem('theme', 'light');
-        } else {
-            document.body.classList.replace('light-mode', 'dark-mode');
-            themeToggleBtn.textContent = '🌙';
-            localStorage.setItem('theme', 'dark');
-        }
-    });
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            if (document.body.classList.contains('dark-mode')) {
+                document.body.classList.replace('dark-mode', 'light-mode');
+                themeToggleBtn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.classList.replace('light-mode', 'dark-mode');
+                themeToggleBtn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    }
 
     // --- Sidebar Toggle Functionality ---
     sidebarToggleBtn.addEventListener('click', (e) => {

@@ -120,7 +120,8 @@ body {
 .sidebar.collapsed .new-chat-btn,
 .sidebar.collapsed .language-selector,
 .sidebar.collapsed .history-list,
-.sidebar.collapsed .sidebar-footer {
+.sidebar.collapsed .sidebar-footer,
+.sidebar.collapsed .guest-history-prompt {
     display: none;
 }
 
