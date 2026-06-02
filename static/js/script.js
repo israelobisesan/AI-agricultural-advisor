@@ -298,17 +298,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Add Audio Player(s) to Existing Message ---
-    // audioUrls can be an array of URLs (new format) or a single URL string (legacy fallback)
     function addAudioPlayerToMessage(messageElement, audioUrls) {
         const messageDiv = messageElement.querySelector('.message');
         const urls = Array.isArray(audioUrls) ? audioUrls : [audioUrls];
         const showLabels = urls.length > 1;
+        const audioElements = [];
 
         urls.forEach((audioUrl, index) => {
             const audioWrapper = document.createElement('div');
             audioWrapper.classList.add('audio-player');
 
-            // Show "Part X of Y" label only when there are multiple chunks
             if (showLabels) {
                 const label = document.createElement('div');
                 label.textContent = `Part ${index + 1} of ${urls.length}`;
@@ -330,6 +329,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const playBtn = controls.querySelector('.play-btn');
             const stopBtn = controls.querySelector('.stop-btn');
             const progressBar = controls.querySelector('.progress-bar');
+
+            audioElements.push(audio);
 
             playBtn.addEventListener('click', () => {
                 if (audio.paused) {
@@ -353,6 +354,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             audio.addEventListener('ended', () => {
                 playBtn.textContent = '▶';
+                const next = audioElements[index + 1];
+                if (next) {
+                    const wrapper = next.closest('.audio-player');
+                    const nextBtn = wrapper ? wrapper.querySelector('.play-btn') : null;
+                    next.play();
+                    if (nextBtn) nextBtn.textContent = '⏸';
+                }
             });
 
             progressBar.addEventListener('input', () => {

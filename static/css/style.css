@@ -132,6 +132,11 @@ body {
 .app-title {
     margin: 0;
     font-size: 20px;
+    color: #fff !important;
+}
+
+.sidebar-toggle svg {
+    fill: #fff !important;
 }
 
 .new-chat-btn {
@@ -172,7 +177,7 @@ body {
 
 .selector-label {
     font-size: 14px;
-    color: #a0a0a0;
+    color: #fff !important;
     text-transform: uppercase;
     margin-left: 5px;
 }
@@ -180,10 +185,18 @@ body {
 .language-dropdown {
     width: 100%;
     padding: 8px;
-    background-color: var(--input-bg-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: var(--text-color);
+}
+
+body.dark-mode .language-dropdown {
+    background-color: #000;
+    color: #fff;
+}
+
+body.light-mode .language-dropdown {
+    background-color: #1a1a2e;
+    color: #fff;
 }
 
 .history-list {
@@ -270,6 +283,7 @@ body {
 .user-email {
     font-size: 14px;
     font-weight: bold;
+    color: #fff !important;
 }
 
 .action-buttons {

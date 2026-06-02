@@ -186,8 +186,12 @@ def register():
 
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            flash('An account with this email already exists.', 'danger')
-            return redirect(url_for('register'))
+            if existing_user.is_verified:
+                flash('An account with this email already exists.', 'danger')
+                return redirect(url_for('register'))
+            else:
+                db.session.delete(existing_user)
+                db.session.commit()
 
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         new_user = User(email=email, password=hashed_password)
@@ -340,23 +344,28 @@ def split_text_into_chunks(text, max_chars=300):
 
 
 def generate_tts_audio(text, lang):
-    """
-    Generates TTS audio file(s) for the given text and language.
-    Splits long text into chunks and returns a LIST of audio URLs.
-    """
     cleaned_text = clean_text_for_tts(text)
-    chunks = split_text_into_chunks(cleaned_text, max_chars=300)
     audio_urls = []
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
 
-    for i, chunk in enumerate(chunks):
-        if not chunk.strip():
-            continue
-
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-        audio_filename = f"response-{timestamp}-{i}-{lang}.mp3"
+    if lang == 'en':
+        audio_filename = f"response-{timestamp}-0-{lang}.mp3"
         audio_path = os.path.join(app.config['AUDIO_FOLDER'], audio_filename)
+        try:
+            tts = gTTS(text=cleaned_text, lang='en', slow=False)
+            tts.save(audio_path)
+            audio_urls.append(url_for('static', filename=f'audio/{audio_filename}'))
+        except Exception as e:
+            print(f"gTTS failed: {e}")
+        return audio_urls
 
-        if lang == 'yo' and yoruba_tts_model and yoruba_tts_tokenizer:
+    if lang == 'yo' and yoruba_tts_model and yoruba_tts_tokenizer:
+        chunks = split_text_into_chunks(cleaned_text, max_chars=5000)
+        for i, chunk in enumerate(chunks):
+            if not chunk.strip():
+                continue
+            audio_filename = f"response-{timestamp}-{i}-{lang}.mp3"
+            audio_path = os.path.join(app.config['AUDIO_FOLDER'], audio_filename)
             try:
                 inputs = yoruba_tts_tokenizer(chunk, return_tensors="pt")
                 with torch.no_grad():
@@ -367,14 +376,7 @@ def generate_tts_audio(text, lang):
                 print(f"MMS-TTS chunk {i} failed: {e}")
                 continue
 
-        elif lang == 'en':
-            try:
-                tts = gTTS(text=chunk, lang='en', slow=False)
-                tts.save(audio_path)
-                audio_urls.append(url_for('static', filename=f'audio/{audio_filename}'))
-            except Exception as e:
-                print(f"gTTS chunk {i} failed: {e}")
-                continue
+    return audio_urls
 
     return audio_urls if audio_urls else []
 
