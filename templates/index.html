@@ -6,9 +6,65 @@
     <title>AI Agriculture Advisor</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .guest-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .guest-topbar .app-title {
+            margin: 0;
+            font-size: 18px;
+            color: #fff !important;
+        }
+        .guest-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .guest-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .guest-btn-login {
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .guest-btn-login:hover {
+            border-color: #4ade80;
+            color: #4ade80;
+        }
+        .guest-btn-register {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #0f2027;
+        }
+        .guest-btn-register:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(74,222,128,0.4);
+        }
+        .guest-banner {
+            text-align: center;
+            padding: 10px;
+            font-size: 13px;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .guest-banner a {
+            color: #4ade80;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body class="dark-mode">
     <div class="app-container">
+        {% if current_user.is_authenticated %}
         <aside class="sidebar" id="sidebar">
             <header class="sidebar-header">
                 <button class="sidebar-toggle" id="sidebar-toggle">
@@ -59,9 +115,22 @@
                 </div>
             </footer>
         </aside>
+        {% else %}
+        <div class="guest-topbar">
+            <h1 class="app-title">AI Agriculture Advisor</h1>
+            <div class="guest-actions">
+                <a href="{{ url_for('login') }}" class="guest-btn guest-btn-login">Log In</a>
+                <a href="{{ url_for('register') }}" class="guest-btn guest-btn-register">Sign Up</a>
+            </div>
+        </div>
+        {% endif %}
         
         <div class="chat-main">
-            <!-- CHAT HEADER REMOVED COMPLETELY -->
+            {% if not current_user.is_authenticated %}
+            <div class="guest-banner">
+                You are using the app as a guest. <a href="{{ url_for('login') }}">Log in</a> or <a href="{{ url_for('register') }}">Sign up</a> to save your chat history.
+            </div>
+            {% endif %}
             
             <div class="chat-history" id="chat-history">
                 <div class="message-container system-message-container">
@@ -73,7 +142,7 @@
     
             <div class="chat-input-area">
                 <form id="chat-form" class="chat-form">
-                    <input type="hidden" id="session-id" value="{{ current_session.id }}">
+                    <input type="hidden" id="session-id" value="{{ current_session.id if current_session else '' }}">
                     <textarea id="user-input" class="user-input" placeholder="Type your message..." rows="1" required></textarea>
                     
                     <button type="button" id="upload-image-button" class="chat-button">

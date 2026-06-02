@@ -138,31 +138,33 @@ def home():
     return render_template('landing.html')
 
 @app.route('/chat')
-@login_required
 def chat():
-    user_sessions = ChatSession.query.filter_by(user_id=current_user.id).order_by(ChatSession.created_at.desc()).all()
-    if not user_sessions:
-        new_session = ChatSession(user_id=current_user.id)
-        db.session.add(new_session)
-        db.session.commit()
-        user_sessions = [new_session]
+    if current_user.is_authenticated:
+        user_sessions = ChatSession.query.filter_by(user_id=current_user.id).order_by(ChatSession.created_at.desc()).all()
+        if not user_sessions:
+            new_session = ChatSession(user_id=current_user.id)
+            db.session.add(new_session)
+            db.session.commit()
+            user_sessions = [new_session]
+        
+        session_id = request.args.get('session_id')
+        if session_id:
+            current_session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+            if not current_session:
+                return redirect(url_for('chat', session_id=user_sessions[0].id))
+        else:
+            current_session = user_sessions[0]
+        
+        messages = ChatMessage.query.filter_by(session_id=current_session.id).order_by(ChatMessage.created_at).all()
+        
+        return render_template(
+            'index.html',
+            sessions=user_sessions,
+            current_session=current_session,
+            messages=messages
+        )
     
-    session_id = request.args.get('session_id')
-    if session_id:
-        current_session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
-        if not current_session:
-            return redirect(url_for('chat', session_id=user_sessions[0].id))
-    else:
-        current_session = user_sessions[0]
-    
-    messages = ChatMessage.query.filter_by(session_id=current_session.id).order_by(ChatMessage.created_at).all()
-    
-    return render_template(
-        'index.html',
-        sessions=user_sessions,
-        current_session=current_session,
-        messages=messages
-    )
+    return render_template('index.html', sessions=[], current_session=None, messages=[])
 
 
 @app.route('/new_chat', methods=['GET', 'POST'])
@@ -382,7 +384,6 @@ def generate_tts_audio(text, lang):
 
 
 @app.route('/api/chat', methods=['POST'])
-@login_required
 def api_chat():
     data = request.json
     user_message = data.get('message')
@@ -393,30 +394,28 @@ def api_chat():
     if not user_message:
         return jsonify({'error': 'No message provided'}), 400
     
-    chat_session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
-    if not chat_session:
-        return jsonify({'error': 'Chat session not found or does not belong to user'}), 404
-    
-    # Save the user's message to the database
-    user_message_obj = ChatMessage(
-        session_id=session_id,
-        sender='user',
-        text=user_message,
-        image_filename=image_filename
-    )
-    db.session.add(user_message_obj)
-    db.session.commit()
-    
-    # Update chat session title if it's still the default
-    chat_session = db.session.get(ChatSession, session_id)
-    if chat_session.title == "New Chat":
-        words = user_message.split()
-        new_title = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
-        chat_session.title = new_title
+    if current_user.is_authenticated:
+        chat_session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+        if not chat_session:
+            return jsonify({'error': 'Chat session not found or does not belong to user'}), 404
+        
+        user_message_obj = ChatMessage(
+            session_id=session_id,
+            sender='user',
+            text=user_message,
+            image_filename=image_filename
+        )
+        db.session.add(user_message_obj)
         db.session.commit()
+        
+        chat_session = db.session.get(ChatSession, session_id)
+        if chat_session.title == "New Chat":
+            words = user_message.split()
+            new_title = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
+            chat_session.title = new_title
+            db.session.commit()
     
     try:
-        # Build language-specific instruction for Gemini
         if selected_language == 'yo':
             language_instruction = (
                 "\n\nCRITICAL INSTRUCTION: You MUST respond ENTIRELY in proper Yoruba language. "
@@ -425,14 +424,13 @@ def api_chat():
                 "Keep explanations simple and clear for farmers. "
                 "DO NOT mix English with Yoruba. ONLY Yoruba language."
             )
-        else:  # English
+        else:
             language_instruction = (
                 "\n\nCRITICAL INSTRUCTION: You MUST respond ENTIRELY in clear, simple English. "
                 "DO NOT use Yoruba language in your response. "
                 "Provide practical advice suitable for farmers in simple English only."
             )
         
-        # System prompt with language instruction embedded
         system_prompt = (
             "You are an AI-powered agricultural advisor for Yoruba farmers "
             "(South-West Nigeria). Always provide detailed, step-by-step, practical guidance "
@@ -464,7 +462,6 @@ def api_chat():
             f"{language_instruction}"
         )
         
-        # Generate response with Gemini
         if image_filename:
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
             img = Image.open(image_path)
@@ -476,19 +473,22 @@ def api_chat():
         
         ai_response_text = response.text
         
-        # Save the AI's response WITHOUT audio URL yet (generated separately)
-        ai_message_obj = ChatMessage(
-            session_id=session_id,
-            sender='ai',
-            text=ai_response_text,
-            audio_url=None
-        )
-        db.session.add(ai_message_obj)
-        db.session.commit()
+        if current_user.is_authenticated:
+            ai_message_obj = ChatMessage(
+                session_id=session_id,
+                sender='ai',
+                text=ai_response_text,
+                audio_url=None
+            )
+            db.session.add(ai_message_obj)
+            db.session.commit()
+            message_id = ai_message_obj.id
+        else:
+            message_id = None
         
         return jsonify({
             'response': ai_response_text,
-            'message_id': ai_message_obj.id,
+            'message_id': message_id,
             'language': selected_language
         })
     
@@ -563,7 +563,6 @@ def api_get_chat_history(session_id):
         return jsonify({'error': 'Chat session not found or does not belong to user'}), 404
 
 @app.route('/api/upload_image', methods=['POST'])
-@login_required
 def upload_image():
     if 'image' not in request.files:
         return jsonify({'error': 'No image file provided'}), 400
