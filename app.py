@@ -501,41 +501,42 @@ def api_chat():
 
 
 @app.route('/api/generate_audio', methods=['POST'])
-@login_required
 def api_generate_audio():
     data = request.json
     message_id = data.get('message_id')
-
-    if not message_id:
-        return jsonify({'error': 'No message_id provided'}), 400
-
-    message = ChatMessage.query.get(message_id)
-    if not message:
-        return jsonify({'error': 'Message not found'}), 404
-
-    # Verify the message belongs to a session owned by the current user
-    chat_session = ChatSession.query.get(message.session_id)
-    if not chat_session or chat_session.user_id != current_user.id:
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    # Return cached audio list if already generated
-    if message.audio_url:
-        try:
-            cached = json.loads(message.audio_url)
-            return jsonify({'audio_urls': cached})
-        except Exception:
-            # Fallback: old single-URL format stored as plain string
-            return jsonify({'audio_urls': [message.audio_url]})
-
     language = data.get('language', 'en')
 
+    if message_id and current_user.is_authenticated:
+        message = ChatMessage.query.get(message_id)
+        if not message:
+            return jsonify({'error': 'Message not found'}), 404
+
+        chat_session = ChatSession.query.get(message.session_id)
+        if not chat_session or chat_session.user_id != current_user.id:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        if message.audio_url:
+            try:
+                cached = json.loads(message.audio_url)
+                return jsonify({'audio_urls': cached})
+            except Exception:
+                return jsonify({'audio_urls': [message.audio_url]})
+
+        text = message.text
+    else:
+        text = data.get('text')
+        if not text:
+            return jsonify({'error': 'No text provided for guest audio'}), 400
+
     try:
-        audio_urls = generate_tts_audio(message.text, language)
+        audio_urls = generate_tts_audio(text, language)
 
         if audio_urls:
-            # Store as a JSON list in the DB
-            message.audio_url = json.dumps(audio_urls)
-            db.session.commit()
+            if message_id and current_user.is_authenticated:
+                message = ChatMessage.query.get(message_id)
+                if message:
+                    message.audio_url = json.dumps(audio_urls)
+                    db.session.commit()
             return jsonify({'audio_urls': audio_urls})
         else:
             return jsonify({'error': 'Failed to generate audio'}), 500

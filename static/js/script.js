@@ -240,9 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const messageElement = appendMessageToChat('ai', data.response, false, null);
             const audioLoadingIndicator = addAudioLoadingIndicator(messageElement);
 
-            if (data.message_id) {
-                generateAudioInBackground(data.message_id, selectedLanguage, messageElement, audioLoadingIndicator);
-            }
+            generateAudioInBackground(data.message_id, selectedLanguage, messageElement, audioLoadingIndicator, data.response);
 
             uploadedImagePath = null;
             userInput.placeholder = 'Type your message...';
@@ -259,12 +257,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Generate Audio in Background ---
-    async function generateAudioInBackground(messageId, language, messageElement, audioLoadingIndicator) {
+    async function generateAudioInBackground(messageId, language, messageElement, audioLoadingIndicator, textFallback) {
         try {
+            const body = messageId
+                ? { message_id: messageId, language: language }
+                : { text: textFallback, language: language };
             const response = await fetch('/api/generate_audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message_id: messageId, language: language })
+                body: JSON.stringify(body)
             });
 
             const data = await response.json();
