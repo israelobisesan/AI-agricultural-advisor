@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check Email</title>
+    <title>Verify Your Account</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -17,7 +17,7 @@
             padding: 20px;
         }
         .auth-container {
-            max-width: 420px;
+            max-width: 480px;
             width: 100%;
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
@@ -31,10 +31,10 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .icon { font-size: 3rem; margin-bottom: 20px; }
+        .icon { font-size: 3.5rem; margin-bottom: 20px; }
         .auth-title {
             font-size: 1.5rem;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             background: linear-gradient(to right, #4ade80, #22c55e);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -42,43 +42,72 @@
         }
         .confirm-message {
             color: #94a3b8;
-            font-size: 1rem;
+            font-size: 0.95rem;
             line-height: 1.6;
             margin-bottom: 25px;
         }
+        .link-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(74,222,128,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .link-card-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .verify-btn {
+            display: inline-block;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #0f2027;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .verify-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(74, 222, 128, 0.4);
+        }
+        .helper-text {
+            color: #64748b;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-top: 20px;
+        }
         .auth-link {
             display: inline-block;
+            margin-top: 20px;
             color: #4ade80;
             text-decoration: none;
             font-size: 0.9rem;
             transition: color 0.2s;
         }
         .auth-link:hover { color: #22c55e; }
-        .alert {
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-        .alert-success { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
-        .alert-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-        .alert-warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
     </style>
 </head>
 <body>
     <div class="auth-container">
-        <div class="icon">📧</div>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-        {% endwith %}
-        <h2 class="auth-title">Thank you for registering!</h2>
-        <p class="confirm-message">Please check your email to confirm your account. If you don't see it, check your spam folder.</p>
-        <a href="{{ url_for('login') }}" class="auth-link">Go to Login</a>
+        <div class="icon">🎉</div>
+        <h2 class="auth-title">Account Created!</h2>
+        <p class="confirm-message">Your account is ready. Click the button below to verify your email address and start using the advisor.</p>
+        
+        <div class="link-card">
+            <div class="link-card-label">Verification Link</div>
+            <a href="{{ verify_link }}" class="verify-btn">Verify My Account</a>
+        </div>
+
+        <p class="helper-text">
+            We've also sent a verification email to your inbox. If you don't see it, the button above works just the same.
+        </p>
+
+        <a href="{{ url_for('login') }}" class="auth-link">Go to Login →</a>
     </div>
 </body>
 </html>

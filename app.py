@@ -200,9 +200,17 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        send_confirmation_email(email)
+        token = s.dumps(email, salt='email-confirm')
+        verify_link = url_for('confirm_email', token=token, _external=True)
 
-        return render_template('confirm.html')
+        try:
+            msg = FlaskMailMessage('Confirm Your Email', sender=os.getenv('MAIL_FROM_ADDRESS'), recipients=[email])
+            msg.body = f'Your verification link is {verify_link}'
+            mail.send(msg)
+        except Exception:
+            pass
+
+        return render_template('confirm.html', verify_link=verify_link)
     return render_template('register.html')
 
 @app.route('/confirm_email/<token>')
@@ -250,11 +258,16 @@ def forgot_password():
         if user:
             token = s.dumps(email, salt='password-reset')
             link = url_for('reset_password', token=token, _external=True)
-            send_reset_email(email, link)
-            flash(f'Reset link (also sent via email): {link}', 'success')
+            try:
+                msg = FlaskMailMessage('Password Reset Request', sender=os.getenv('MAIL_FROM_ADDRESS'), recipients=[email])
+                msg.body = f'To reset your password, click: {link}\n\nThis link expires in 1 hour.'
+                mail.send(msg)
+            except Exception:
+                pass
+            return render_template('forgot_password.html', reset_link=link)
         else:
             flash('If that email is registered, a password reset link has been sent.', 'success')
-        return redirect(url_for('login'))
+            return redirect(url_for('login'))
     return render_template('forgot_password.html')
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
